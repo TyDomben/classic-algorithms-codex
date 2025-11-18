@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FizzBuzz - Interactive Visualization</title>
+  <link rel="stylesheet" href="../../../visualizations/shared-styles.css">
+</head>
+<body>
+  <div class="container">
+    <a href="../README.md" class="back-link">← Back to FizzBuzz</a>
+
+    <h1>🎯 FizzBuzz Visualization</h1>
+    <p class="text-center">The classic programming interview problem visualized</p>
+
+    <!-- Info Panel -->
+    <div class="info-panel fade-in">
+      <div class="info-grid">
+        <div class="info-item">
+          <h4>Time Complexity</h4>
+          <div class="value complexity complexity-linear">O(n)</div>
+        </div>
+        <div class="info-item">
+          <h4>Space Complexity</h4>
+          <div class="value complexity complexity-constant">O(1)</div>
+        </div>
+        <div class="info-item">
+          <h4>Current Number</h4>
+          <div class="value" id="current-number">1</div>
+        </div>
+        <div class="info-item">
+          <h4>Fizzes</h4>
+          <div class="value" id="fizz-count">0</div>
+        </div>
+        <div class="info-item">
+          <h4>Buzzes</h4>
+          <div class="value" id="buzz-count">0</div>
+        </div>
+        <div class="info-item">
+          <h4>FizzBuzzes</h4>
+          <div class="value" id="fizzbuzz-count">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="visualization-canvas"></canvas>
+
+    <!-- Controls -->
+    <div id="controls"></div>
+
+    <!-- Custom Input -->
+    <div class="input-section fade-in">
+      <h3>Custom Input</h3>
+      <div class="input-group">
+        <label>Count to:</label>
+        <input type="number" id="n-input" min="1" max="200" value="30">
+        <button class="btn btn-primary" id="run-fizzbuzz">Run FizzBuzz</button>
+      </div>
+      <div class="input-group">
+        <label>Custom Rules:</label>
+        <input type="text" id="rules-input" placeholder="e.g., 3:Fizz,5:Buzz,7:Bazz" value="3:Fizz,5:Buzz">
+        <button class="btn btn-secondary" id="apply-rules">Apply Rules</button>
+      </div>
+    </div>
+
+    <!-- Output Display -->
+    <div class="info-panel fade-in">
+      <h3>FizzBuzz Output</h3>
+      <div id="output-display" style="max-height: 200px; overflow-y: auto; font-family: monospace; line-height: 1.8;">
+      </div>
+    </div>
+  </div>
+
+  <script src="../../../visualizations/visualization-framework.js"></script>
+  <script>
+    function generateFizzBuzzSteps(n, rules = [[3, 'Fizz'], [5, 'Buzz']]) {
+      const steps = [];
+      let fizzCount = 0, buzzCount = 0, fizzbuzzCount = 0;
+
+      for (let i = 1; i <= n; i++) {
+        let output = '';
+        let reasons = [];
+
+        for (const [divisor, word] of rules) {
+          if (i % divisor === 0) {
+            output += word;
+            reasons.push(`${i} % ${divisor} === 0 → add "${word}"`);
+
+            if (word === 'Fizz') fizzCount++;
+            if (word === 'Buzz') buzzCount++;
+          }
+        }
+
+        if (output === 'FizzBuzz') fizzbuzzCount++;
+        if (output === '') output = i.toString();
+
+        steps.push({
+          number: i,
+          output: output,
+          reasons: reasons.length > 0 ? reasons.join(', ') : `${i} not divisible by any rule`,
+          isFizz: output.includes('Fizz') && !output.includes('Buzz'),
+          isBuzz: output.includes('Buzz') && !output.includes('Fizz'),
+          isFizzBuzz: output === 'FizzBuzz',
+          isNumber: output === i.toString(),
+          fizzCount, buzzCount, fizzbuzzCount
+        });
+      }
+
+      return steps;
+    }
+
+    const viz = new VisualizationFramework('visualization-canvas', {
+      width: 900,
+      height: 400,
+      renderCallback: (ctx, step, framework) {
+        // Clear canvas
+        framework.clear();
+
+        // Draw current number large in center
+        const centerX = framework.canvas.width / 2;
+        const centerY = 150;
+
+        // Draw number
+        ctx.fillStyle = framework.colors.textSecondary;
+        ctx.font = 'bold 40px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(step.number, centerX, centerY);
+
+        // Draw output
+        let outputColor = framework.colors.text;
+        if (step.isFizz) outputColor = framework.colors.info;
+        if (step.isBuzz) outputColor = framework.colors.warning;
+        if (step.isFizzBuzz) outputColor = framework.colors.success;
+
+        ctx.fillStyle = outputColor;
+        ctx.font = 'bold 60px monospace';
+        ctx.fillText(step.output, centerX, centerY + 70);
+
+        // Draw reason
+        ctx.fillStyle = framework.colors.textSecondary;
+        ctx.font = '14px monospace';
+        ctx.fillText(step.reasons, centerX, centerY + 120);
+
+        // Update stats
+        document.getElementById('current-number').textContent = step.number;
+        document.getElementById('fizz-count').textContent = step.fizzCount;
+        document.getElementById('buzz-count').textContent = step.buzzCount;
+        document.getElementById('fizzbuzz-count').textContent = step.fizzbuzzCount;
+
+        // Update output display
+        const outputEl = document.getElementById('output-display');
+        outputEl.innerHTML = viz.state.steps.slice(0, viz.state.currentStep + 1)
+          .map((s, idx) => {
+            let color = 'var(--color-text)';
+            if (s.isFizz) color = 'var(--color-info)';
+            if (s.isBuzz) color = 'var(--color-warning)';
+            if (s.isFizzBuzz) color = 'var(--color-success)';
+
+            return `<span style="color: ${color}; font-weight: ${idx === viz.state.currentStep ? 'bold' : 'normal'};">${s.output}</span>`;
+          })
+          .join(', ');
+      }
+    });
+
+    const controls = new ControlPanel('controls', viz);
+
+    // Initialize with default
+    const steps = generateFizzBuzzSteps(30);
+    viz.initialize(steps);
+
+    // Run FizzBuzz button
+    document.getElementById('run-fizzbuzz').addEventListener('click', () => {
+      const n = parseInt(document.getElementById('n-input').value);
+      if (isNaN(n) || n < 1 || n > 200) {
+        alert('Please enter a number between 1 and 200');
+        return;
+      }
+
+      const rulesInput = document.getElementById('rules-input').value;
+      const rules = rulesInput.split(',').map(r => {
+        const [divisor, word] = r.split(':');
+        return [parseInt(divisor.trim()), word.trim()];
+      }).filter(r => !isNaN(r[0]) && r[1]);
+
+      if (rules.length === 0) {
+        alert('Please enter valid rules');
+        return;
+      }
+
+      const steps = generateFizzBuzzSteps(n, rules);
+      viz.initialize(steps);
+      viz.setSpeed(2);
+    });
+
+    // Apply rules button
+    document.getElementById('apply-rules').addEventListener('click', () => {
+      const n = parseInt(document.getElementById('n-input').value) || 30;
+      const rulesInput = document.getElementById('rules-input').value;
+
+      const rules = rulesInput.split(',').map(r => {
+        const [divisor, word] = r.split(':');
+        return [parseInt(divisor.trim()), word.trim()];
+      }).filter(r => !isNaN(r[0]) && r[1]);
+
+      if (rules.length === 0) {
+        alert('Please enter valid rules (e.g., 3:Fizz,5:Buzz,7:Bazz)');
+        return;
+      }
+
+      const steps = generateFizzBuzzSteps(n, rules);
+      viz.initialize(steps);
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        document.getElementById('btn-play-pause').click();
+      }
+    });
+  </script>
+</body>
+</html>

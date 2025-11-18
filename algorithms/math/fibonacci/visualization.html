@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fibonacci - Interactive Visualization</title>
+  <link rel="stylesheet" href="../../../visualizations/shared-styles.css">
+</head>
+<body>
+  <div class="container">
+    <a href="../README.md" class="back-link">← Back to Fibonacci</a>
+
+    <h1>🌀 Fibonacci Sequence Visualization</h1>
+    <p class="text-center">See the golden ratio emerge from recursive beauty</p>
+
+    <!-- Info Panel -->
+    <div class="info-panel fade-in">
+      <div class="info-grid">
+        <div class="info-item">
+          <h4>Naive Recursive</h4>
+          <div class="value complexity complexity-exponential">O(2ⁿ)</div>
+        </div>
+        <div class="info-item">
+          <h4>Optimized</h4>
+          <div class="value complexity complexity-linear">O(n)</div>
+        </div>
+        <div class="info-item">
+          <h4>Current Position</h4>
+          <div class="value" id="current-position">0</div>
+        </div>
+        <div class="info-item">
+          <h4>Current Value</h4>
+          <div class="value" id="current-value">0</div>
+        </div>
+        <div class="info-item">
+          <h4>Golden Ratio</h4>
+          <div class="value" id="golden-ratio">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="visualization-canvas"></canvas>
+
+    <!-- Controls -->
+    <div id="controls"></div>
+
+    <!-- Custom Input -->
+    <div class="input-section fade-in">
+      <h3>Custom Input</h3>
+      <div class="input-group">
+        <label>Generate first:</label>
+        <input type="number" id="n-input" min="1" max="30" value="15">
+        <span>numbers</span>
+        <button class="btn btn-primary" id="generate-btn">Generate</button>
+      </div>
+    </div>
+
+    <!-- Sequence Display -->
+    <div class="info-panel fade-in">
+      <h3>Fibonacci Sequence</h3>
+      <div id="sequence-display" style="font-family: monospace; line-height: 2; word-break: break-all;">
+      </div>
+    </div>
+
+    <!-- Algorithm Info -->
+    <div class="info-panel fade-in">
+      <h3>How It's Calculated</h3>
+      <div id="calculation-display" style="font-family: monospace; line-height: 2;">
+        F(n) = F(n-1) + F(n-2)
+      </div>
+    </div>
+  </div>
+
+  <script src="../../../visualizations/visualization-framework.js"></script>
+  <script>
+    function generateFibonacciSteps(n) {
+      const steps = [];
+      const sequence = [];
+      let prev = 0, curr = 1;
+
+      for (let i = 0; i < n; i++) {
+        const value = i === 0 ? 0 : i === 1 ? 1 : prev + curr;
+
+        let calculation = '';
+        if (i === 0) calculation = 'F(0) = 0 (base case)';
+        else if (i === 1) calculation = 'F(1) = 1 (base case)';
+        else calculation = `F(${i}) = F(${i-1}) + F(${i-2}) = ${curr} + ${prev} = ${value}`;
+
+        const goldenRatio = i > 0 ? (value / (sequence[i-1] || 1)).toFixed(6) : '-';
+
+        steps.push({
+          position: i,
+          value: i === 0 ? 0 : i === 1 ? 1 : value,
+          sequence: [...sequence, i === 0 ? 0 : i === 1 ? 1 : value],
+          calculation,
+          goldenRatio,
+          prev: i === 0 ? 0 : prev,
+          curr: i === 0 ? 1 : curr
+        });
+
+        sequence.push(i === 0 ? 0 : i === 1 ? 1 : value);
+
+        if (i >= 2) {
+          prev = curr;
+          curr = value;
+        }
+      }
+
+      return steps;
+    }
+
+    const viz = new VisualizationFramework('visualization-canvas', {
+      width: 900,
+      height: 450,
+      renderCallback: (ctx, step, framework) {
+        framework.clear();
+
+        const sequence = step.sequence;
+        const maxValue = Math.max(...sequence);
+        const barWidth = Math.min(700 / sequence.length, 60);
+
+        // Draw bars
+        sequence.forEach((val, idx) => {
+          const isCurrent = idx === step.position;
+          const color = isCurrent ? framework.colors.warning : framework.colors.primary;
+
+          const barHeight = maxValue > 0 ? (val / maxValue) * 300 : 10;
+          const barX = 100 + idx * barWidth;
+          const barY = 350 - barHeight;
+
+          // Draw bar
+          ctx.fillStyle = color;
+          ctx.fillRect(barX + 2, barY, barWidth - 4, barHeight);
+
+          // Draw value on top (if fits)
+          if (barWidth > 25) {
+            ctx.fillStyle = framework.colors.text;
+            ctx.font = `${Math.min(barWidth * 0.4, 12)}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.fillText(val, barX + barWidth / 2, barY - 5);
+          }
+
+          // Draw index
+          ctx.fillStyle = framework.colors.textSecondary;
+          ctx.font = '10px monospace';
+          ctx.fillText(idx, barX + barWidth / 2, 370);
+        });
+
+        // Update UI
+        document.getElementById('current-position').textContent = step.position;
+        document.getElementById('current-value').textContent = step.value;
+        document.getElementById('golden-ratio').textContent = step.goldenRatio;
+        document.getElementById('calculation-display').textContent = step.calculation;
+
+        // Update sequence display
+        document.getElementById('sequence-display').innerHTML =
+          sequence.map((val, idx) =>
+            `<span style="color: ${idx === step.position ? 'var(--color-warning)' : 'var(--color-primary)'}; font-weight: ${idx === step.position ? 'bold' : 'normal'};">${val}</span>`
+          ).join(', ');
+      }
+    });
+
+    const controls = new ControlPanel('controls', viz);
+
+    // Initialize
+    const steps = generateFibonacciSteps(15);
+    viz.initialize(steps);
+
+    // Generate button
+    document.getElementById('generate-btn').addEventListener('click', () => {
+      const n = parseInt(document.getElementById('n-input').value);
+      if (isNaN(n) || n < 1 || n > 30) {
+        alert('Please enter a number between 1 and 30');
+        return;
+      }
+
+      const steps = generateFibonacciSteps(n);
+      viz.initialize(steps);
+      viz.setSpeed(1);
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        document.getElementById('btn-play-pause').click();
+      }
+    });
+  </script>
+</body>
+</html>
