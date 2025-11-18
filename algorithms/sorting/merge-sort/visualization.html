@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merge Sort Visualization</title>
+    <link rel="stylesheet" href="../../../visualizations/shared-styles.css">
+    <style>
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
+        .phase-indicator {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .phase-divide {
+            color: #e74c3c;
+        }
+
+        .phase-merge {
+            color: #2ecc71;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔀 Merge Sort Visualization</h1>
+            <p class="subtitle">Watch the divide-and-conquer algorithm in action</p>
+        </header>
+
+        <div class="visualization-container">
+            <canvas id="canvas"></canvas>
+
+            <div class="phase-indicator" id="phaseIndicator">
+                <span id="phaseText">Ready to start</span>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <button id="playPause" class="btn btn-primary">▶ Play</button>
+                    <button id="stepBack" class="btn">⏮ Step Back</button>
+                    <button id="stepForward" class="btn">⏭ Step Forward</button>
+                    <button id="reset" class="btn">🔄 Reset</button>
+                </div>
+
+                <div class="control-group">
+                    <label for="speed">Speed:</label>
+                    <input type="range" id="speed" min="1" max="10" value="5">
+                    <span id="speedValue">5</span>
+                </div>
+
+                <div class="control-group">
+                    <label for="customInput">Custom Array (comma-separated):</label>
+                    <input type="text" id="customInput" placeholder="38, 27, 43, 3, 9, 82, 10">
+                    <button id="setCustom" class="btn">Set Array</button>
+                </div>
+
+                <div class="control-group">
+                    <button id="randomArray" class="btn">Random Array</button>
+                    <button id="sortedArray" class="btn">Sorted Array</button>
+                    <button id="reverseArray" class="btn">Reverse Sorted</button>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #3498db;"></div>
+                    <span>Current Subarray</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #e74c3c;"></div>
+                    <span>Left Half</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #9b59b6;"></div>
+                    <span>Right Half</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #2ecc71;"></div>
+                    <span>Merged/Sorted</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f39c12;"></div>
+                    <span>Comparing</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Comparisons</div>
+                    <div class="stat-value" id="comparisons">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Merges</div>
+                    <div class="stat-value" id="merges">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Current Depth</div>
+                    <div class="stat-value" id="depth">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Max Depth</div>
+                    <div class="stat-value" id="maxDepth">0</div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3>Algorithm Information</h3>
+                <ul>
+                    <li><strong>Time Complexity:</strong> O(n log n) in all cases</li>
+                    <li><strong>Space Complexity:</strong> O(n) auxiliary space</li>
+                    <li><strong>Stable:</strong> Yes - preserves order of equal elements</li>
+                    <li><strong>Method:</strong> Divide-and-conquer with merging</li>
+                </ul>
+            </div>
+
+            <div class="info-box">
+                <h3>How It Works</h3>
+                <ol>
+                    <li><strong>Divide:</strong> Split the array into two halves</li>
+                    <li><strong>Conquer:</strong> Recursively sort each half</li>
+                    <li><strong>Combine:</strong> Merge the two sorted halves</li>
+                    <li><strong>Base Case:</strong> Arrays of size 0 or 1 are already sorted</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../../visualizations/visualization-framework.js"></script>
+    <script>
+        class MergeSortVisualization extends VisualizationFramework {
+            constructor(canvasId) {
+                super(canvasId, {
+                    arraySize: 10,
+                    minValue: 0,
+                    maxValue: 100
+                });
+
+                this.comparisons = 0;
+                this.merges = 0;
+                this.currentDepth = 0;
+                this.maxDepth = 0;
+
+                this.generateSteps();
+                this.updateStats();
+            }
+
+            generateArray(type = 'random') {
+                if (type === 'random') {
+                    this.array = Array.from({ length: this.options.arraySize },
+                        () => Math.floor(Math.random() * (this.options.maxValue + 1)));
+                } else if (type === 'sorted') {
+                    this.array = Array.from({ length: this.options.arraySize },
+                        (_, i) => i * 10);
+                } else if (type === 'reverse') {
+                    this.array = Array.from({ length: this.options.arraySize },
+                        (_, i) => (this.options.arraySize - 1 - i) * 10);
+                }
+                this.generateSteps();
+                this.updateStats();
+            }
+
+            generateSteps() {
+                this.steps = [];
+                this.comparisons = 0;
+                this.merges = 0;
+                this.currentDepth = 0;
+                this.maxDepth = 0;
+
+                const arr = [...this.array];
+
+                // Initial state
+                this.steps.push({
+                    array: [...arr],
+                    description: 'Initial array',
+                    phase: 'initial',
+                    ranges: [],
+                    comparing: [],
+                    depth: 0
+                });
+
+                this.mergeSortSteps(arr, 0, arr.length - 1, 0);
+
+                // Final state
+                this.steps.push({
+                    array: [...arr],
+                    description: 'Array fully sorted!',
+                    phase: 'complete',
+                    ranges: [],
+                    comparing: [],
+                    depth: 0
+                });
+
+                this.currentStep = 0;
+                this.draw();
+            }
+
+            mergeSortSteps(arr, left, right, depth) {
+                this.maxDepth = Math.max(this.maxDepth, depth);
+
+                if (left >= right) {
+                    return;
+                }
+
+                // Divide phase
+                const mid = Math.floor((left + right) / 2);
+
+                this.steps.push({
+                    array: [...arr],
+                    description: `Divide: splitting range [${left}..${right}] at index ${mid}`,
+                    phase: 'divide',
+                    ranges: [{ start: left, end: right, color: '#3498db' }],
+                    comparing: [],
+                    depth: depth
+                });
+
+                // Recursively sort left half
+                this.mergeSortSteps(arr, left, mid, depth + 1);
+
+                // Recursively sort right half
+                this.mergeSortSteps(arr, mid + 1, right, depth + 1);
+
+                // Merge phase
+                this.mergeSteps(arr, left, mid, right, depth);
+            }
+
+            mergeSteps(arr, left, mid, right, depth) {
+                this.merges++;
+
+                this.steps.push({
+                    array: [...arr],
+                    description: `Merge: combining [${left}..${mid}] and [${mid+1}..${right}]`,
+                    phase: 'merge',
+                    ranges: [
+                        { start: left, end: mid, color: '#e74c3c' },
+                        { start: mid + 1, end: right, color: '#9b59b6' }
+                    ],
+                    comparing: [],
+                    depth: depth
+                });
+
+                // Create temp arrays
+                const leftArr = arr.slice(left, mid + 1);
+                const rightArr = arr.slice(mid + 1, right + 1);
+
+                let i = 0, j = 0, k = left;
+
+                // Merge process
+                while (i < leftArr.length && j < rightArr.length) {
+                    this.comparisons++;
+
+                    const leftIdx = left + i;
+                    const rightIdx = mid + 1 + j;
+
+                    this.steps.push({
+                        array: [...arr],
+                        description: `Compare ${leftArr[i]} and ${rightArr[j]}`,
+                        phase: 'merge',
+                        ranges: [
+                            { start: left, end: mid, color: '#e74c3c' },
+                            { start: mid + 1, end: right, color: '#9b59b6' }
+                        ],
+                        comparing: [leftIdx, rightIdx],
+                        depth: depth
+                    });
+
+                    if (leftArr[i] <= rightArr[j]) {
+                        arr[k] = leftArr[i];
+                        i++;
+                    } else {
+                        arr[k] = rightArr[j];
+                        j++;
+                    }
+                    k++;
+
+                    this.steps.push({
+                        array: [...arr],
+                        description: `Merged value: ${arr[k-1]} at position ${k-1}`,
+                        phase: 'merge',
+                        ranges: [{ start: left, end: k - 1, color: '#2ecc71' }],
+                        comparing: [],
+                        depth: depth
+                    });
+                }
+
+                // Copy remaining elements from left
+                while (i < leftArr.length) {
+                    arr[k] = leftArr[i];
+                    i++;
+                    k++;
+                }
+
+                // Copy remaining elements from right
+                while (j < rightArr.length) {
+                    arr[k] = rightArr[j];
+                    j++;
+                    k++;
+                }
+
+                this.steps.push({
+                    array: [...arr],
+                    description: `Merged range [${left}..${right}] complete`,
+                    phase: 'merge',
+                    ranges: [{ start: left, end: right, color: '#2ecc71' }],
+                    comparing: [],
+                    depth: depth
+                });
+            }
+
+            draw() {
+                const step = this.steps[this.currentStep];
+                this.clearCanvas();
+
+                const barWidth = this.canvas.width / step.array.length;
+                const maxHeight = this.canvas.height - 100;
+
+                // Draw range highlights
+                step.ranges.forEach(range => {
+                    this.ctx.fillStyle = range.color + '20';  // Semi-transparent
+                    this.ctx.fillRect(
+                        range.start * barWidth,
+                        0,
+                        (range.end - range.start + 1) * barWidth,
+                        this.canvas.height - 60
+                    );
+                });
+
+                // Draw bars
+                step.array.forEach((value, index) => {
+                    const height = (value / this.options.maxValue) * maxHeight;
+                    const x = index * barWidth + 5;
+                    const y = this.canvas.height - height - 60;
+
+                    // Determine color
+                    let color = this.colors.default;
+
+                    if (step.comparing.includes(index)) {
+                        color = this.colors.comparing;
+                    } else {
+                        for (const range of step.ranges) {
+                            if (index >= range.start && index <= range.end) {
+                                color = range.color;
+                                break;
+                            }
+                        }
+                    }
+
+                    this.ctx.fillStyle = color;
+                    this.ctx.fillRect(x, y, barWidth - 10, height);
+
+                    // Draw value
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = '12px monospace';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(value, x + (barWidth - 10) / 2, y - 5);
+
+                    // Draw index
+                    this.ctx.fillStyle = this.colors.text;
+                    this.ctx.fillText(index, x + (barWidth - 10) / 2, this.canvas.height - 40);
+                });
+
+                // Draw description
+                this.ctx.fillStyle = this.colors.text;
+                this.ctx.font = '14px monospace';
+                this.ctx.textAlign = 'left';
+                this.ctx.fillText(step.description, 10, this.canvas.height - 10);
+
+                // Draw step counter
+                this.ctx.textAlign = 'right';
+                this.ctx.fillText(
+                    `Step ${this.currentStep + 1} / ${this.steps.length}`,
+                    this.canvas.width - 10,
+                    this.canvas.height - 10
+                );
+
+                // Update phase indicator
+                const phaseText = document.getElementById('phaseText');
+                const phaseIndicator = document.getElementById('phaseIndicator');
+                phaseIndicator.className = 'phase-indicator';
+
+                if (step.phase === 'divide') {
+                    phaseText.textContent = 'DIVIDE PHASE';
+                    phaseIndicator.classList.add('phase-divide');
+                } else if (step.phase === 'merge') {
+                    phaseText.textContent = 'MERGE PHASE';
+                    phaseIndicator.classList.add('phase-merge');
+                } else {
+                    phaseText.textContent = step.phase === 'complete' ? 'COMPLETE!' : 'READY';
+                }
+
+                this.updateStats();
+            }
+
+            updateStats() {
+                document.getElementById('comparisons').textContent = this.comparisons;
+                document.getElementById('merges').textContent = this.merges;
+                document.getElementById('depth').textContent = this.steps[this.currentStep]?.depth || 0;
+                document.getElementById('maxDepth').textContent = this.maxDepth;
+            }
+        }
+
+        // Initialize visualization
+        const viz = new MergeSortVisualization('canvas');
+
+        // Event listeners
+        document.getElementById('playPause').addEventListener('click', () => viz.togglePlayPause());
+        document.getElementById('stepBack').addEventListener('click', () => viz.stepBackward());
+        document.getElementById('stepForward').addEventListener('click', () => viz.stepForward());
+        document.getElementById('reset').addEventListener('click', () => viz.reset());
+
+        document.getElementById('speed').addEventListener('input', (e) => {
+            viz.setSpeed(parseInt(e.target.value));
+            document.getElementById('speedValue').textContent = e.target.value;
+        });
+
+        document.getElementById('setCustom').addEventListener('click', () => {
+            const input = document.getElementById('customInput').value;
+            const array = input.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+            if (array.length > 0) {
+                viz.array = array;
+                viz.options.arraySize = array.length;
+                viz.options.maxValue = Math.max(...array);
+                viz.generateSteps();
+            }
+        });
+
+        document.getElementById('randomArray').addEventListener('click', () => {
+            viz.generateArray('random');
+        });
+
+        document.getElementById('sortedArray').addEventListener('click', () => {
+            viz.generateArray('sorted');
+        });
+
+        document.getElementById('reverseArray').addEventListener('click', () => {
+            viz.generateArray('reverse');
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                viz.togglePlayPause();
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                viz.stepForward();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                viz.stepBackward();
+            } else if (e.code === 'KeyR') {
+                e.preventDefault();
+                viz.reset();
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => viz.draw());
+    </script>
+</body>
+</html>
