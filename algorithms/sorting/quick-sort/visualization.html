@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Sort Visualization</title>
+    <link rel="stylesheet" href="../../../visualizations/shared-styles.css">
+    <style>
+        .pivot-legend {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Quick Sort Visualization</h1>
+            <p class="subtitle">Watch the divide-and-conquer partitioning in action</p>
+        </header>
+
+        <div class="visualization-container">
+            <canvas id="canvas"></canvas>
+
+            <div class="controls">
+                <div class="control-group">
+                    <button id="playPause" class="btn btn-primary">▶ Play</button>
+                    <button id="stepBack" class="btn">⏮ Step Back</button>
+                    <button id="stepForward" class="btn">⏭ Step Forward</button>
+                    <button id="reset" class="btn">🔄 Reset</button>
+                </div>
+
+                <div class="control-group">
+                    <label for="speed">Speed:</label>
+                    <input type="range" id="speed" min="1" max="10" value="5">
+                    <span id="speedValue">5</span>
+                </div>
+
+                <div class="control-group">
+                    <label for="customInput">Custom Array (comma-separated):</label>
+                    <input type="text" id="customInput" placeholder="8, 3, 1, 7, 0, 10, 2">
+                    <button id="setCustom" class="btn">Set Array</button>
+                </div>
+
+                <div class="control-group">
+                    <button id="randomArray" class="btn">Random Array</button>
+                    <button id="sortedArray" class="btn">Sorted Array</button>
+                    <button id="reverseArray" class="btn">Reverse Sorted</button>
+                </div>
+            </div>
+
+            <div class="pivot-legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #e74c3c;"></div>
+                    <span>Pivot</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #3498db;"></div>
+                    <span>Less than Pivot</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #9b59b6;"></div>
+                    <span>Greater than Pivot</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #2ecc71;"></div>
+                    <span>Sorted</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f39c12;"></div>
+                    <span>Comparing</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Comparisons</div>
+                    <div class="stat-value" id="comparisons">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Swaps</div>
+                    <div class="stat-value" id="swaps">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Current Depth</div>
+                    <div class="stat-value" id="depth">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Max Depth</div>
+                    <div class="stat-value" id="maxDepth">0</div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3>Algorithm Information</h3>
+                <ul>
+                    <li><strong>Time Complexity:</strong> O(n log n) average, O(n²) worst case</li>
+                    <li><strong>Space Complexity:</strong> O(log n) for recursion stack</li>
+                    <li><strong>Stable:</strong> No (can be made stable with modifications)</li>
+                    <li><strong>Method:</strong> Divide and conquer with in-place partitioning</li>
+                </ul>
+            </div>
+
+            <div class="info-box">
+                <h3>How It Works</h3>
+                <ol>
+                    <li><strong>Choose Pivot:</strong> Select the last element as pivot</li>
+                    <li><strong>Partition:</strong> Rearrange array so elements &lt; pivot are on left, elements &gt; pivot are on right</li>
+                    <li><strong>Place Pivot:</strong> Put pivot in its final sorted position</li>
+                    <li><strong>Recurse:</strong> Apply same process to left and right subarrays</li>
+                    <li><strong>Base Case:</strong> Subarrays of size 0 or 1 are already sorted</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../../visualizations/visualization-framework.js"></script>
+    <script>
+        class QuickSortVisualization extends VisualizationFramework {
+            constructor(canvasId) {
+                super(canvasId, {
+                    arraySize: 12,
+                    minValue: 0,
+                    maxValue: 100
+                });
+
+                this.comparisons = 0;
+                this.swaps = 0;
+                this.currentDepth = 0;
+                this.maxDepth = 0;
+
+                this.generateSteps();
+                this.updateStats();
+            }
+
+            generateArray(type = 'random') {
+                if (type === 'random') {
+                    this.array = Array.from({ length: this.options.arraySize },
+                        () => Math.floor(Math.random() * (this.options.maxValue + 1)));
+                } else if (type === 'sorted') {
+                    this.array = Array.from({ length: this.options.arraySize },
+                        (_, i) => i * 10);
+                } else if (type === 'reverse') {
+                    this.array = Array.from({ length: this.options.arraySize },
+                        (_, i) => (this.options.arraySize - 1 - i) * 10);
+                }
+                this.generateSteps();
+                this.updateStats();
+            }
+
+            generateSteps() {
+                this.steps = [];
+                this.comparisons = 0;
+                this.swaps = 0;
+                this.currentDepth = 0;
+                this.maxDepth = 0;
+
+                const arr = [...this.array];
+                const sorted = new Array(arr.length).fill(false);
+
+                // Initial state
+                this.steps.push({
+                    array: [...arr],
+                    sorted: [...sorted],
+                    description: 'Initial array',
+                    pivot: -1,
+                    left: -1,
+                    right: -1,
+                    comparing: [],
+                    depth: 0
+                });
+
+                this.quickSortSteps(arr, 0, arr.length - 1, sorted, 0);
+
+                // Final state
+                sorted.fill(true);
+                this.steps.push({
+                    array: [...arr],
+                    sorted: [...sorted],
+                    description: 'Array fully sorted!',
+                    pivot: -1,
+                    left: -1,
+                    right: -1,
+                    comparing: [],
+                    depth: 0
+                });
+
+                this.currentStep = 0;
+                this.draw();
+            }
+
+            quickSortSteps(arr, left, right, sorted, depth) {
+                this.currentDepth = depth;
+                this.maxDepth = Math.max(this.maxDepth, depth);
+
+                if (left >= right) {
+                    if (left === right && left >= 0 && left < arr.length) {
+                        sorted[left] = true;
+                        this.steps.push({
+                            array: [...arr],
+                            sorted: [...sorted],
+                            description: `Single element at index ${left} is sorted`,
+                            pivot: -1,
+                            left: -1,
+                            right: -1,
+                            comparing: [],
+                            depth: depth
+                        });
+                    }
+                    return;
+                }
+
+                const pivot = arr[right];
+
+                this.steps.push({
+                    array: [...arr],
+                    sorted: [...sorted],
+                    description: `Partitioning range [${left}..${right}], pivot = ${pivot}`,
+                    pivot: right,
+                    left: left,
+                    right: right,
+                    comparing: [],
+                    depth: depth
+                });
+
+                let i = left - 1;
+
+                for (let j = left; j < right; j++) {
+                    this.comparisons++;
+
+                    this.steps.push({
+                        array: [...arr],
+                        sorted: [...sorted],
+                        description: `Compare arr[${j}] (${arr[j]}) with pivot (${pivot})`,
+                        pivot: right,
+                        left: left,
+                        right: right,
+                        comparing: [j],
+                        depth: depth
+                    });
+
+                    if (arr[j] <= pivot) {
+                        i++;
+
+                        if (i !== j) {
+                            this.swaps++;
+
+                            this.steps.push({
+                                array: [...arr],
+                                sorted: [...sorted],
+                                description: `Swap arr[${i}] (${arr[i]}) with arr[${j}] (${arr[j]})`,
+                                pivot: right,
+                                left: left,
+                                right: right,
+                                comparing: [i, j],
+                                depth: depth
+                            });
+
+                            [arr[i], arr[j]] = [arr[j], arr[i]];
+
+                            this.steps.push({
+                                array: [...arr],
+                                sorted: [...sorted],
+                                description: `After swap: arr[${i}] = ${arr[i]}, arr[${j}] = ${arr[j]}`,
+                                pivot: right,
+                                left: left,
+                                right: right,
+                                comparing: [i, j],
+                                depth: depth
+                            });
+                        }
+                    }
+                }
+
+                this.swaps++;
+                const pivotIndex = i + 1;
+
+                this.steps.push({
+                    array: [...arr],
+                    sorted: [...sorted],
+                    description: `Place pivot at position ${pivotIndex}`,
+                    pivot: right,
+                    left: left,
+                    right: right,
+                    comparing: [pivotIndex],
+                    depth: depth
+                });
+
+                [arr[pivotIndex], arr[right]] = [arr[right], arr[pivotIndex]];
+                sorted[pivotIndex] = true;
+
+                this.steps.push({
+                    array: [...arr],
+                    sorted: [...sorted],
+                    description: `Pivot ${pivot} is now in its final position ${pivotIndex}`,
+                    pivot: pivotIndex,
+                    left: left,
+                    right: right,
+                    comparing: [],
+                    depth: depth
+                });
+
+                this.quickSortSteps(arr, left, pivotIndex - 1, sorted, depth + 1);
+                this.quickSortSteps(arr, pivotIndex + 1, right, sorted, depth + 1);
+            }
+
+            draw() {
+                const step = this.steps[this.currentStep];
+                this.clearCanvas();
+
+                const barWidth = this.canvas.width / step.array.length;
+                const maxHeight = this.canvas.height - 100;
+
+                // Draw range highlight
+                if (step.left >= 0 && step.right >= 0) {
+                    this.ctx.fillStyle = 'rgba(52, 152, 219, 0.1)';
+                    this.ctx.fillRect(
+                        step.left * barWidth,
+                        0,
+                        (step.right - step.left + 1) * barWidth,
+                        this.canvas.height - 60
+                    );
+                }
+
+                // Draw bars
+                step.array.forEach((value, index) => {
+                    const height = (value / this.options.maxValue) * maxHeight;
+                    const x = index * barWidth + 5;
+                    const y = this.canvas.height - height - 60;
+
+                    // Determine color
+                    let color = this.colors.default;
+
+                    if (step.sorted[index]) {
+                        color = this.colors.sorted; // Green for sorted
+                    } else if (index === step.pivot) {
+                        color = '#e74c3c'; // Red for pivot
+                    } else if (step.comparing.includes(index)) {
+                        color = this.colors.comparing; // Orange for comparing
+                    } else if (step.left >= 0 && step.right >= 0 && index >= step.left && index <= step.right) {
+                        if (step.pivot >= 0 && index < step.pivot) {
+                            color = '#3498db'; // Blue for left partition
+                        } else if (step.pivot >= 0 && index > step.pivot) {
+                            color = '#9b59b6'; // Purple for right partition
+                        }
+                    }
+
+                    this.ctx.fillStyle = color;
+                    this.ctx.fillRect(x, y, barWidth - 10, height);
+
+                    // Draw value
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = '12px monospace';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(value, x + (barWidth - 10) / 2, y - 5);
+
+                    // Draw index
+                    this.ctx.fillStyle = this.colors.text;
+                    this.ctx.fillText(index, x + (barWidth - 10) / 2, this.canvas.height - 40);
+                });
+
+                // Draw description
+                this.ctx.fillStyle = this.colors.text;
+                this.ctx.font = '14px monospace';
+                this.ctx.textAlign = 'left';
+                this.ctx.fillText(step.description, 10, this.canvas.height - 10);
+
+                // Draw step counter
+                this.ctx.textAlign = 'right';
+                this.ctx.fillText(
+                    `Step ${this.currentStep + 1} / ${this.steps.length}`,
+                    this.canvas.width - 10,
+                    this.canvas.height - 10
+                );
+
+                this.updateStats();
+            }
+
+            updateStats() {
+                document.getElementById('comparisons').textContent = this.comparisons;
+                document.getElementById('swaps').textContent = this.swaps;
+                document.getElementById('depth').textContent = this.steps[this.currentStep]?.depth || 0;
+                document.getElementById('maxDepth').textContent = this.maxDepth;
+            }
+        }
+
+        // Initialize visualization
+        const viz = new QuickSortVisualization('canvas');
+
+        // Event listeners
+        document.getElementById('playPause').addEventListener('click', () => viz.togglePlayPause());
+        document.getElementById('stepBack').addEventListener('click', () => viz.stepBackward());
+        document.getElementById('stepForward').addEventListener('click', () => viz.stepForward());
+        document.getElementById('reset').addEventListener('click', () => viz.reset());
+
+        document.getElementById('speed').addEventListener('input', (e) => {
+            viz.setSpeed(parseInt(e.target.value));
+            document.getElementById('speedValue').textContent = e.target.value;
+        });
+
+        document.getElementById('setCustom').addEventListener('click', () => {
+            const input = document.getElementById('customInput').value;
+            const array = input.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+            if (array.length > 0) {
+                viz.array = array;
+                viz.options.arraySize = array.length;
+                viz.options.maxValue = Math.max(...array);
+                viz.generateSteps();
+            }
+        });
+
+        document.getElementById('randomArray').addEventListener('click', () => {
+            viz.generateArray('random');
+        });
+
+        document.getElementById('sortedArray').addEventListener('click', () => {
+            viz.generateArray('sorted');
+        });
+
+        document.getElementById('reverseArray').addEventListener('click', () => {
+            viz.generateArray('reverse');
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                viz.togglePlayPause();
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                viz.stepForward();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                viz.stepBackward();
+            } else if (e.code === 'KeyR') {
+                e.preventDefault();
+                viz.reset();
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => viz.draw());
+    </script>
+</body>
+</html>
