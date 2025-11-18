@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Algorithm Visualizations - Classic Algorithms Codex</title>
+  <link rel="stylesheet" href="shared-styles.css">
+  <style>
+    .gallery-header {
+      text-align: center;
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .gallery-header p {
+      font-size: 1.2rem;
+      color: var(--color-text-secondary);
+    }
+
+    .filter-bar {
+      background-color: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      box-shadow: var(--shadow-md);
+    }
+
+    .filter-controls {
+      display: flex;
+      gap: var(--spacing-md);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .search-box input {
+      width: 100%;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: var(--spacing-sm);
+      align-items: center;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .algorithm-card {
+      background-color: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      box-shadow: var(--shadow-md);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .algorithm-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--color-primary);
+    }
+
+    .algorithm-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      color: var(--color-text);
+      font-weight: bold;
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .card-category {
+      font-size: 0.875rem;
+      color: var(--color-primary);
+      text-transform: uppercase;
+    }
+
+    .difficulty-badge {
+      padding: var(--spacing-xs) var(--spacing-sm);
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .difficulty-easy {
+      background-color: var(--color-success);
+      color: white;
+    }
+
+    .difficulty-medium {
+      background-color: var(--color-warning);
+      color: white;
+    }
+
+    .difficulty-hard {
+      background-color: var(--color-error);
+      color: white;
+    }
+
+    .card-description {
+      color: var(--color-text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: var(--spacing-md);
+      line-height: 1.6;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--spacing-md);
+      padding-top: var(--spacing-md);
+      border-top: 1px solid var(--color-text-secondary);
+    }
+
+    .complexity-tags {
+      display: flex;
+      gap: var(--spacing-xs);
+      flex-wrap: wrap;
+    }
+
+    .complexity-tag {
+      padding: var(--spacing-xs) var(--spacing-sm);
+      background-color: var(--color-background);
+      border-radius: var(--radius-sm);
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      color: var(--color-primary);
+    }
+
+    .card-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      padding: var(--spacing-xs);
+      border-radius: var(--radius-sm);
+      transition: all 0.3s ease;
+      font-size: 1.2rem;
+    }
+
+    .icon-btn:hover {
+      color: var(--color-primary);
+      background-color: var(--color-background);
+    }
+
+    .stats-bar {
+      background-color: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      box-shadow: var(--shadow-md);
+      margin-bottom: var(--spacing-xl);
+      text-align: center;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      gap: var(--spacing-lg);
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: var(--color-primary);
+      display: block;
+    }
+
+    .stat-label {
+      color: var(--color-text-secondary);
+      font-size: 0.875rem;
+      text-transform: uppercase;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: var(--spacing-xl);
+      color: var(--color-text-secondary);
+      font-size: 1.2rem;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: var(--spacing-lg);
+      color: var(--color-primary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    .back-link:hover {
+      color: var(--color-secondary);
+    }
+
+    @media (max-width: 768px) {
+      .gallery-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-box {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="../README.md" class="back-link">← Back to Main Index</a>
+
+    <header class="gallery-header fade-in">
+      <h1>🎨 Algorithm Visualizations</h1>
+      <p>Interactive, step-by-step visualizations of classic algorithms</p>
+    </header>
+
+    <div class="stats-bar fade-in">
+      <div class="stats-row">
+        <div class="stat-item">
+          <span class="stat-value" id="total-count">0</span>
+          <span class="stat-label">Total Algorithms</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="category-count">0</span>
+          <span class="stat-label">Categories</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="showing-count">0</span>
+          <span class="stat-label">Showing</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-bar fade-in">
+      <div class="filter-controls">
+        <div class="search-box">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="🔍 Search algorithms..."
+            aria-label="Search algorithms"
+          >
+        </div>
+
+        <div class="filter-group">
+          <label for="category-filter">Category:</label>
+          <select id="category-filter">
+            <option value="">All Categories</option>
+            <option value="sorting">Sorting</option>
+            <option value="searching">Searching</option>
+            <option value="strings">Strings</option>
+            <option value="arrays">Arrays</option>
+            <option value="math">Math</option>
+            <option value="graphs">Graphs</option>
+            <option value="trees">Trees</option>
+            <option value="dynamic-programming">Dynamic Programming</option>
+            <option value="backtracking">Backtracking</option>
+            <option value="greedy">Greedy</option>
+            <option value="classics">Classics</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="difficulty-filter">Difficulty:</label>
+          <select id="difficulty-filter">
+            <option value="">All Levels</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+
+        <button class="btn btn-secondary" id="reset-filters">Reset Filters</button>
+      </div>
+    </div>
+
+    <div class="gallery-grid" id="gallery">
+      <!-- Algorithm cards will be dynamically inserted here -->
+    </div>
+
+    <div class="no-results" id="no-results" style="display: none;">
+      No algorithms found matching your criteria.
+    </div>
+  </div>
+
+  <script>
+    // Algorithm data
+    const algorithms = [
+      // Sorting
+      { name: 'Bubble Sort', category: 'sorting', difficulty: 'easy', time: 'O(n²)', space: 'O(1)', description: 'Simple comparison-based sorting with repeated swapping of adjacent elements.', path: '../algorithms/sorting/bubble-sort/visualization.html' },
+      { name: 'Selection Sort', category: 'sorting', difficulty: 'easy', time: 'O(n²)', space: 'O(1)', description: 'Finds minimum element and places it at the beginning repeatedly.', path: '../algorithms/sorting/selection-sort/visualization.html' },
+      { name: 'Insertion Sort', category: 'sorting', difficulty: 'easy', time: 'O(n²)', space: 'O(1)', description: 'Builds sorted array by inserting elements one at a time.', path: '../algorithms/sorting/insertion-sort/visualization.html' },
+      { name: 'Merge Sort', category: 'sorting', difficulty: 'medium', time: 'O(n log n)', space: 'O(n)', description: 'Divide and conquer algorithm that splits and merges arrays.', path: '../algorithms/sorting/merge-sort/visualization.html' },
+      { name: 'Quick Sort', category: 'sorting', difficulty: 'medium', time: 'O(n log n)', space: 'O(log n)', description: 'Efficient divide and conquer using pivot partitioning.', path: '../algorithms/sorting/quick-sort/visualization.html' },
+      { name: 'Heap Sort', category: 'sorting', difficulty: 'hard', time: 'O(n log n)', space: 'O(1)', description: 'Sorts using a binary heap data structure.', path: '../algorithms/sorting/heap-sort/visualization.html' },
+      { name: 'Radix Sort', category: 'sorting', difficulty: 'medium', time: 'O(nk)', space: 'O(n+k)', description: 'Non-comparative sorting by processing digits.', path: '../algorithms/sorting/radix-sort/visualization.html' },
+      { name: 'Counting Sort', category: 'sorting', difficulty: 'medium', time: 'O(n+k)', space: 'O(k)', description: 'Non-comparative sorting for integers in limited range.', path: '../algorithms/sorting/counting-sort/visualization.html' },
+
+      // Searching
+      { name: 'Linear Search', category: 'searching', difficulty: 'easy', time: 'O(n)', space: 'O(1)', description: 'Sequential search through all elements.', path: '../algorithms/searching/linear-search/visualization.html' },
+      { name: 'Binary Search', category: 'searching', difficulty: 'easy', time: 'O(log n)', space: 'O(1)', description: 'Efficient search in sorted arrays by halving search space.', path: '../algorithms/searching/binary-search/visualization.html' },
+      { name: 'Jump Search', category: 'searching', difficulty: 'medium', time: 'O(√n)', space: 'O(1)', description: 'Jumps ahead by fixed steps then linear search.', path: '../algorithms/searching/jump-search/visualization.html' },
+      { name: 'Interpolation Search', category: 'searching', difficulty: 'medium', time: 'O(log log n)', space: 'O(1)', description: 'Improved binary search for uniformly distributed data.', path: '../algorithms/searching/interpolation-search/visualization.html' },
+      { name: 'Exponential Search', category: 'searching', difficulty: 'medium', time: 'O(log n)', space: 'O(1)', description: 'Finds range then applies binary search.', path: '../algorithms/searching/exponential-search/visualization.html' },
+
+      // Strings
+      { name: 'Reverse String', category: 'strings', difficulty: 'easy', time: 'O(n)', space: 'O(1)', description: 'Reverse a string in place using two pointers.', path: '../algorithms/strings/reverse-string/visualization.html' },
+      { name: 'Palindrome Checker', category: 'strings', difficulty: 'easy', time: 'O(n)', space: 'O(1)', description: 'Check if string reads same forwards and backwards.', path: '../algorithms/strings/palindrome-checker/visualization.html' },
+      { name: 'Anagram Detector', category: 'strings', difficulty: 'easy', time: 'O(n)', space: 'O(1)', description: 'Determine if two strings are anagrams.', path: '../algorithms/strings/anagram-detector/visualization.html' },
+      { name: 'Valid Parentheses', category: 'strings', difficulty: 'easy', time: 'O(n)', space: 'O(n)', description: 'Validate balanced brackets using a stack.', path: '../algorithms/strings/valid-parentheses/visualization.html' },
+
+      // Arrays
+      { name: 'Two Sum', category: 'arrays', difficulty: 'easy', time: 'O(n)', space: 'O(n)', description: 'Find two numbers that add up to target using hash map.', path: '../algorithms/arrays/two-sum/visualization.html' },
+      { name: 'Kadane\'s Algorithm', category: 'arrays', difficulty: 'medium', time: 'O(n)', space: 'O(1)', description: 'Find maximum sum contiguous subarray.', path: '../algorithms/arrays/kadanes-algorithm/visualization.html' },
+
+      // Math
+      { name: 'Fibonacci', category: 'math', difficulty: 'easy', time: 'O(n)', space: 'O(1)', description: 'Generate Fibonacci sequence efficiently.', path: '../algorithms/math/fibonacci/visualization.html' },
+      { name: 'Factorial', category: 'math', difficulty: 'easy', time: 'O(n)', space: 'O(1)', description: 'Calculate factorial iteratively and recursively.', path: '../algorithms/math/factorial/visualization.html' },
+      { name: 'Prime Checker', category: 'math', difficulty: 'easy', time: 'O(√n)', space: 'O(1)', description: 'Determine if number is prime efficiently.', path: '../algorithms/math/prime-checker/visualization.html' },
+      { name: 'Sieve of Eratosthenes', category: 'math', difficulty: 'medium', time: 'O(n log log n)', space: 'O(n)', description: 'Generate all primes up to n efficiently.', path: '../algorithms/math/sieve-eratosthenes/visualization.html' },
+
+      // Classics
+      { name: 'FizzBuzz', category: 'classics', difficulty: 'easy', time: 'O(n)', space: 'O(1)', description: 'Print numbers with Fizz, Buzz, or FizzBuzz.', path: '../algorithms/classics/fizzbuzz/visualization.html' },
+      { name: 'Towers of Hanoi', category: 'classics', difficulty: 'medium', time: 'O(2ⁿ)', space: 'O(n)', description: 'Classic recursive puzzle with disks and rods.', path: '../algorithms/classics/towers-of-hanoi/visualization.html' },
+      { name: 'Hello World', category: 'classics', difficulty: 'easy', time: 'O(1)', space: 'O(1)', description: 'The timeless first program.', path: '../algorithms/classics/hello-world/visualization.html' },
+    ];
+
+    // State
+    let filteredAlgorithms = [...algorithms];
+
+    // DOM elements
+    const gallery = document.getElementById('gallery');
+    const searchInput = document.getElementById('search-input');
+    const categoryFilter = document.getElementById('category-filter');
+    const difficultyFilter = document.getElementById('difficulty-filter');
+    const resetButton = document.getElementById('reset-filters');
+    const totalCount = document.getElementById('total-count');
+    const categoryCount = document.getElementById('category-count');
+    const showingCount = document.getElementById('showing-count');
+    const noResults = document.getElementById('no-results');
+
+    // Initialize
+    function init() {
+      updateStats();
+      renderGallery();
+      attachEventListeners();
+    }
+
+    // Render gallery
+    function renderGallery() {
+      gallery.innerHTML = '';
+
+      if (filteredAlgorithms.length === 0) {
+        noResults.style.display = 'block';
+        gallery.style.display = 'none';
+        return;
+      }
+
+      noResults.style.display = 'none';
+      gallery.style.display = 'grid';
+
+      filteredAlgorithms.forEach(algo => {
+        const card = createCard(algo);
+        gallery.appendChild(card);
+      });
+
+      showingCount.textContent = filteredAlgorithms.length;
+    }
+
+    // Create algorithm card
+    function createCard(algo) {
+      const card = document.createElement('div');
+      card.className = 'algorithm-card fade-in';
+      card.onclick = () => window.location.href = algo.path;
+
+      card.innerHTML = `
+        <div class="card-header">
+          <div>
+            <div class="card-category">${algo.category}</div>
+            <div class="card-title">${algo.name}</div>
+          </div>
+          <div class="difficulty-badge difficulty-${algo.difficulty}">
+            ${algo.difficulty}
+          </div>
+        </div>
+        <p class="card-description">${algo.description}</p>
+        <div class="card-footer">
+          <div class="complexity-tags">
+            <span class="complexity-tag">Time: ${algo.time}</span>
+            <span class="complexity-tag">Space: ${algo.space}</span>
+          </div>
+        </div>
+      `;
+
+      return card;
+    }
+
+    // Filter algorithms
+    function filterAlgorithms() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const category = categoryFilter.value;
+      const difficulty = difficultyFilter.value;
+
+      filteredAlgorithms = algorithms.filter(algo => {
+        const matchesSearch = algo.name.toLowerCase().includes(searchTerm) ||
+                             algo.description.toLowerCase().includes(searchTerm);
+        const matchesCategory = !category || algo.category === category;
+        const matchesDifficulty = !difficulty || algo.difficulty === difficulty;
+
+        return matchesSearch && matchesCategory && matchesDifficulty;
+      });
+
+      renderGallery();
+    }
+
+    // Update stats
+    function updateStats() {
+      totalCount.textContent = algorithms.length;
+      const categories = new Set(algorithms.map(a => a.category));
+      categoryCount.textContent = categories.size;
+      showingCount.textContent = filteredAlgorithms.length;
+    }
+
+    // Attach event listeners
+    function attachEventListeners() {
+      searchInput.addEventListener('input', filterAlgorithms);
+      categoryFilter.addEventListener('change', filterAlgorithms);
+      difficultyFilter.addEventListener('change', filterAlgorithms);
+
+      resetButton.addEventListener('click', () => {
+        searchInput.value = '';
+        categoryFilter.value = '';
+        difficultyFilter.value = '';
+        filterAlgorithms();
+      });
+    }
+
+    // Initialize on load
+    init();
+  </script>
+</body>
+</html>

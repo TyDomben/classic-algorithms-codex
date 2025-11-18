@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bubble Sort - Interactive Visualization</title>
+  <link rel="stylesheet" href="../../../visualizations/shared-styles.css">
+</head>
+<body>
+  <div class="container">
+    <a href="../README.md" class="back-link">← Back to Bubble Sort</a>
+
+    <h1>🫧 Bubble Sort Visualization</h1>
+    <p class="text-center">Watch elements bubble to their correct positions</p>
+
+    <!-- Info Panel -->
+    <div class="info-panel fade-in">
+      <div class="info-grid">
+        <div class="info-item">
+          <h4>Time Complexity</h4>
+          <div class="value complexity complexity-quadratic">O(n²)</div>
+        </div>
+        <div class="info-item">
+          <h4>Space Complexity</h4>
+          <div class="value complexity complexity-constant">O(1)</div>
+        </div>
+        <div class="info-item">
+          <h4>Current Step</h4>
+          <div class="value" id="current-step-display">0 / 0</div>
+        </div>
+        <div class="info-item">
+          <h4>Comparisons</h4>
+          <div class="value" id="comparisons-count">0</div>
+        </div>
+        <div class="info-item">
+          <h4>Swaps</h4>
+          <div class="value" id="swaps-count">0</div>
+        </div>
+        <div class="info-item">
+          <h4>Status</h4>
+          <div class="value" id="status-display">Ready</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="visualization-canvas"></canvas>
+
+    <!-- Controls -->
+    <div id="controls"></div>
+
+    <!-- Custom Input -->
+    <div class="input-section fade-in">
+      <h3>Custom Input</h3>
+      <div class="input-group">
+        <input
+          type="text"
+          id="custom-input"
+          placeholder="Enter numbers (e.g., 5,2,8,1,9)"
+          value="64,34,25,12,22,11,90"
+        >
+        <button class="btn btn-primary" id="run-custom">Visualize</button>
+        <button class="btn btn-secondary" id="random-btn">Random Array</button>
+      </div>
+      <div class="input-group">
+        <label>Array Size:</label>
+        <input type="range" id="size-slider" min="5" max="20" value="10">
+        <span id="size-value">10</span>
+      </div>
+    </div>
+
+    <!-- Step Description -->
+    <div class="step-description fade-in" id="step-description">
+      <h3>Current Step</h3>
+      <p id="step-text">Enter an array and click "Visualize" to start</p>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend fade-in">
+      <h3>Legend</h3>
+      <div class="legend-items">
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: var(--color-primary);"></div>
+          <span>Unsorted Element</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: var(--color-comparing);"></div>
+          <span>Comparing</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: var(--color-warning);"></div>
+          <span>Swapping</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: var(--color-sorted);"></div>
+          <span>Sorted</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Algorithm Explanation -->
+    <div class="info-panel fade-in">
+      <h3>How Bubble Sort Works</h3>
+      <p>
+        Bubble Sort repeatedly steps through the list, compares adjacent elements,
+        and swaps them if they're in the wrong order. The largest element "bubbles"
+        to the end with each pass.
+      </p>
+      <ol>
+        <li>Compare adjacent elements</li>
+        <li>Swap if in wrong order</li>
+        <li>Repeat until sorted</li>
+      </ol>
+    </div>
+  </div>
+
+  <script src="../../../visualizations/visualization-framework.js"></script>
+  <script>
+    // Generate steps for bubble sort visualization
+    function generateBubbleSortSteps(arr) {
+      const steps = [];
+      const workingArr = [...arr];
+      const n = workingArr.length;
+      let comparisons = 0;
+      let swaps = 0;
+
+      // Initial state
+      steps.push({
+        array: workingArr.map((val, idx) => ({ value: val, state: 'default' })),
+        comparing: [],
+        swapped: false,
+        description: `Initial array: [${workingArr.join(', ')}]`,
+        comparisons,
+        swaps
+      });
+
+      for (let i = 0; i < n - 1; i++) {
+        let swappedInPass = false;
+
+        for (let j = 0; j < n - i - 1; j++) {
+          comparisons++;
+
+          // Show comparison
+          const compareArray = workingArr.map((val, idx) => ({
+            value: val,
+            state: idx === j || idx === j + 1 ? 'comparing' :
+                   idx >= n - i ? 'sorted' : 'default'
+          }));
+
+          steps.push({
+            array: compareArray,
+            comparing: [j, j + 1],
+            swapped: false,
+            description: `Pass ${i + 1}: Comparing ${workingArr[j]} and ${workingArr[j + 1]}`,
+            comparisons,
+            swaps
+          });
+
+          if (workingArr[j] > workingArr[j + 1]) {
+            // Perform swap
+            [workingArr[j], workingArr[j + 1]] = [workingArr[j + 1], workingArr[j]];
+            swaps++;
+            swappedInPass = true;
+
+            // Show swap
+            const swapArray = workingArr.map((val, idx) => ({
+              value: val,
+              state: idx === j || idx === j + 1 ? 'active' :
+                     idx >= n - i ? 'sorted' : 'default'
+            }));
+
+            steps.push({
+              array: swapArray,
+              comparing: [j, j + 1],
+              swapped: true,
+              description: `Swapped! Now: [${workingArr.join(', ')}]`,
+              comparisons,
+              swaps
+            });
+          }
+        }
+
+        // Mark element as sorted
+        const passCompleteArray = workingArr.map((val, idx) => ({
+          value: val,
+          state: idx >= n - i - 1 ? 'sorted' : 'default'
+        }));
+
+        steps.push({
+          array: passCompleteArray,
+          comparing: [],
+          swapped: false,
+          description: `Pass ${i + 1} complete. Element ${workingArr[n - i - 1]} is now in its final position.`,
+          comparisons,
+          swaps
+        });
+
+        if (!swappedInPass) {
+          steps.push({
+            array: workingArr.map((val) => ({ value: val, state: 'sorted' })),
+            comparing: [],
+            swapped: false,
+            description: 'Array is sorted! No more swaps needed.',
+            comparisons,
+            swaps
+          });
+          break;
+        }
+      }
+
+      // Final state
+      steps.push({
+        array: workingArr.map((val) => ({ value: val, state: 'sorted' })),
+        comparing: [],
+        swapped: false,
+        description: `Sorting complete! Total comparisons: ${comparisons}, Total swaps: ${swaps}`,
+        comparisons,
+        swaps
+      });
+
+      return steps;
+    }
+
+    // Initialize visualization
+    const viz = new VisualizationFramework('visualization-canvas', {
+      width: 900,
+      height: 450,
+      renderCallback: (ctx, step, framework) => {
+        // Draw array
+        const arr = step.array;
+        const barWidth = 700 / arr.length;
+        const maxValue = Math.max(...arr.map(item => item.value));
+
+        arr.forEach((item, i) => {
+          let color = framework.colors.primary;
+          if (item.state === 'comparing') color = framework.colors.comparing;
+          else if (item.state === 'sorted') color = framework.colors.sorted;
+          else if (item.state === 'active') color = framework.colors.warning;
+
+          const barHeight = (item.value / maxValue) * 300;
+          const barX = 100 + i * barWidth;
+          const barY = 350 - barHeight;
+
+          // Draw bar
+          ctx.fillStyle = color;
+          ctx.fillRect(barX + 2, barY, barWidth - 4, barHeight);
+
+          // Draw value on top
+          ctx.fillStyle = framework.colors.text;
+          ctx.font = `${Math.min(barWidth * 0.5, 14)}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.fillText(item.value, barX + barWidth / 2, barY - 5);
+
+          // Draw index below
+          ctx.fillStyle = framework.colors.textSecondary;
+          ctx.font = '11px monospace';
+          ctx.fillText(i, barX + barWidth / 2, 370);
+        });
+
+        // Update stats
+        document.getElementById('comparisons-count').textContent = step.comparisons || 0;
+        document.getElementById('swaps-count').textContent = step.swaps || 0;
+        document.getElementById('step-text').textContent = step.description;
+
+        // Update status
+        const statusEl = document.getElementById('status-display');
+        if (step.description.includes('complete')) {
+          statusEl.textContent = 'Complete ✓';
+          statusEl.style.color = 'var(--color-success)';
+        } else {
+          statusEl.textContent = 'Sorting...';
+          statusEl.style.color = 'var(--color-warning)';
+        }
+      }
+    });
+
+    const controls = new ControlPanel('controls', viz);
+
+    // Update step display when step changes
+    const originalRender = viz.render.bind(viz);
+    viz.render = function() {
+      originalRender();
+      document.getElementById('current-step-display').textContent =
+        `${viz.state.currentStep} / ${viz.state.steps.length - 1}`;
+    };
+
+    // Initialize with example data
+    const exampleData = [64, 34, 25, 12, 22, 11, 90];
+    const steps = generateBubbleSortSteps(exampleData);
+    viz.initialize(steps);
+
+    // Custom input handler
+    document.getElementById('run-custom').addEventListener('click', () => {
+      const input = document.getElementById('custom-input').value;
+      const arr = input.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+
+      if (arr.length === 0) {
+        alert('Please enter valid numbers separated by commas');
+        return;
+      }
+
+      if (arr.length > 50) {
+        alert('Please enter 50 or fewer numbers');
+        return;
+      }
+
+      const steps = generateBubbleSortSteps(arr);
+      viz.initialize(steps);
+      viz.setSpeed(1);
+    });
+
+    // Random array handler
+    document.getElementById('random-btn').addEventListener('click', () => {
+      const size = parseInt(document.getElementById('size-slider').value);
+      const arr = Array.from({ length: size }, () => Math.floor(Math.random() * 99) + 1);
+
+      document.getElementById('custom-input').value = arr.join(',');
+
+      const steps = generateBubbleSortSteps(arr);
+      viz.initialize(steps);
+      viz.setSpeed(1);
+    });
+
+    // Size slider handler
+    const sizeSlider = document.getElementById('size-slider');
+    const sizeValue = document.getElementById('size-value');
+    sizeSlider.addEventListener('input', (e) => {
+      sizeValue.textContent = e.target.value;
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        const playPauseBtn = document.getElementById('btn-play-pause');
+        playPauseBtn.click();
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        viz.stepForward();
+        controls.updateStepDisplay();
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        viz.stepBackward();
+        controls.updateStepDisplay();
+      } else if (e.code === 'KeyR') {
+        e.preventDefault();
+        viz.reset();
+        controls.updateStepDisplay();
+      }
+    });
+
+    // Instructions
+    console.log('Keyboard shortcuts:');
+    console.log('  Space - Play/Pause');
+    console.log('  Arrow Right - Step Forward');
+    console.log('  Arrow Left - Step Backward');
+    console.log('  R - Reset');
+  </script>
+</body>
+</html>
