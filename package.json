@@ -1,0 +1,44 @@
+{
+  "name": "classic-algorithms-codex",
+  "version": "1.0.0",
+  "description": "Comprehensive algorithm reference with 100+ implementations, visualizations, and educational content",
+  "main": "index.js",
+  "scripts": {
+    "test": "node run-all-tests.js",
+    "test:bubble-sort": "node algorithms/sorting/bubble-sort/tests.js",
+    "test:python": "python3 -m pytest tests/ -v",
+    "serve": "python3 -m http.server 8000",
+    "lint:js": "echo 'Linting JavaScript files...' && find . -name '*.js' -not -path './node_modules/*' | head -20",
+    "lint:py": "echo 'Linting Python files...' && find . -name '*.py' -not -path './venv/*' | head -20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/classic-algorithms-codex.git"
+  },
+  "keywords": [
+    "algorithms",
+    "data-structures",
+    "interview-prep",
+    "leetcode",
+    "computer-science",
+    "education",
+    "visualizations",
+    "sorting",
+    "searching",
+    "dynamic-programming",
+    "graphs",
+    "trees"
+  ],
+  "author": "Classic Algorithms Codex Contributors",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/classic-algorithms-codex/issues"
+  },
+  "homepage": "https://github.com/yourusername/classic-algorithms-codex#readme",
+  "engines": {
+    "node": ">=14.0.0",
+    "python": ">=3.8"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}

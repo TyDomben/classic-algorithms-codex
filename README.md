@@ -14,6 +14,8 @@ A beautifully documented collection of 100+ essential algorithms with implementa
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [Getting Started Guide](GETTING_STARTED.md) 📖
+- [Testing Guide](TESTING.md) 🧪
 - [Categories](#categories)
   - [Sorting Algorithms](#sorting-algorithms)
   - [Searching Algorithms](#searching-algorithms)
